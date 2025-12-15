@@ -244,8 +244,9 @@ Este proyecto está bajo la Licencia MIT.
 ## 👨‍💻 Autor
 
 **Mateo Escudero**
+**Kevin Rocha**
 - GitHub: [@mateoescudero10-svg](https://github.com/mateoescudero10-svg)
-- GitHun 
+- 
 ## 📧 Contacto
 
 Para preguntas o sugerencias, por favor abre un issue en el repositorio.
