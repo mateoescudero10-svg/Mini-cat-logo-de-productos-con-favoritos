@@ -1,6 +1,7 @@
 // src/products.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useCart } from './CartContext';
 import { Heart, Search, AlertCircle, MessageCircle, X, Send } from 'lucide-react';
 import './login.css';
 
@@ -17,6 +18,79 @@ const Products = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const { user, token } = useAuth();
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    alert(`${product.name} añadido al carrito`);
+  };
+
+  // Funciones de administrador
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm('¿Estás seguro de eliminar este producto?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el producto');
+      }
+
+      alert('Producto eliminado exitosamente');
+      fetchProducts();
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Error al eliminar el producto');
+    }
+  };
+
+  const handleUpdatePrice = async (productId) => {
+    const product = products.find(p => p.id === productId);
+    const newPrice = prompt('Ingresa el nuevo precio:', product.price);
+
+    if (newPrice === null) return;
+
+    const priceNumber = parseFloat(newPrice);
+    if (isNaN(priceNumber) || priceNumber <= 0) {
+      alert('Por favor ingresa un precio válido');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: product.name,
+          description: product.description,
+          price: priceNumber,
+          image_url: product.image_url
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el precio');
+      }
+
+      alert('Precio actualizado exitosamente');
+      fetchProducts();
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Error al actualizar el precio');
+    }
+  };
 
   // Cargar productos
   useEffect(() => {
@@ -216,26 +290,53 @@ const Products = () => {
       <div style={{ maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
         
         {/* Header */}
-        <div className="login-box" style={{ marginBottom: '20px' }}>
-          <h2 className="login-title">Catálogo de Productos</h2>
+        <div style={{ 
+          background: 'white',
+          borderRadius: '15px',
+          padding: '30px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          marginBottom: '30px'
+        }}>
+          <h2 style={{ 
+            textAlign: 'center',
+            fontSize: '32px',
+            fontWeight: '700',
+            color: '#2c3e50',
+            marginBottom: '10px'
+          }}>
+            Catálogo de Productos
+          </h2>
           
           {user && (
-            <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
+            <p style={{ 
+              textAlign: 'center', 
+              color: '#7f8c8d', 
+              marginBottom: '30px',
+              fontSize: '16px'
+            }}>
               Bienvenido, {user.name}
             </p>
           )}
 
           {/* Barra de búsqueda */}
-          <div className="form-group" style={{ marginBottom: '15px' }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center',
+            marginBottom: '20px'
+          }}>
+            <div style={{ 
+              position: 'relative', 
+              width: '100%', 
+              maxWidth: '600px' 
+            }}>
               <Search 
                 size={20} 
                 style={{ 
                   position: 'absolute', 
-                  left: '12px', 
+                  left: '16px', 
                   top: '50%', 
                   transform: 'translateY(-50%)',
-                  color: '#999'
+                  color: '#95a5a6'
                 }} 
               />
               <input
@@ -243,7 +344,24 @@ const Products = () => {
                 placeholder="Buscar productos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ paddingLeft: '45px' }}
+                style={{ 
+                  width: '100%',
+                  padding: '14px 20px 14px 50px',
+                  fontSize: '16px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '10px',
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4a90e2';
+                  e.target.style.boxShadow = '0 4px 8px rgba(74,144,226,0.2)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e0e0e0';
+                  e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+                }}
               />
             </div>
           </div>
@@ -251,20 +369,48 @@ const Products = () => {
           {/* Filtro de favoritos */}
           {token && (
             <div style={{ textAlign: 'center' }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+              <label style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '10px 20px',
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+              >
                 <input
                   type="checkbox"
                   checked={showFavoritesOnly}
                   onChange={(e) => setShowFavoritesOnly(e.target.checked)}
-                  style={{ marginRight: '8px' }}
+                  style={{ 
+                    marginRight: '10px',
+                    width: '18px',
+                    height: '18px',
+                    cursor: 'pointer'
+                  }}
                 />
-                Mostrar solo favoritos ({favorites.length})
+                <span style={{ fontSize: '15px', color: '#495057' }}>
+                  Mostrar solo favoritos ({favorites.length})
+                </span>
               </label>
             </div>
           )}
 
           {error && (
-            <div className="error-message" style={{ marginTop: '15px' }}>
+            <div style={{ 
+              marginTop: '20px',
+              padding: '15px',
+              background: '#fff5f5',
+              border: '1px solid #feb2b2',
+              borderRadius: '8px',
+              color: '#c53030',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
               <AlertCircle size={16} style={{ marginRight: '8px' }} />
               {error}
             </div>
@@ -328,25 +474,34 @@ const Products = () => {
                         position: 'absolute',
                         top: '10px',
                         right: '10px',
-                        background: 'white',
-                        border: 'none',
+                        background: favorites.includes(product.id) ? '#ff4757' : 'white',
+                        border: '2px solid #ff4757',
                         borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
+                        width: '50px',
+                        height: '50px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        transition: 'all 0.2s'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        transition: 'all 0.3s ease',
+                        zIndex: 10,
+                        padding: '5px'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(255,71,87,0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                      }}
                     >
                       <Heart 
-                        size={20} 
-                        fill={favorites.includes(product.id) ? '#ff4757' : 'none'}
-                        color={favorites.includes(product.id) ? '#ff4757' : '#666'}
+                        size={38} 
+                        fill={favorites.includes(product.id) ? 'white' : '#ff4757'}
+                        color={favorites.includes(product.id) ? 'white' : '#ff4757'}
+                        strokeWidth={1.5}
                       />
                     </button>
                   )}
@@ -399,10 +554,10 @@ const Products = () => {
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert(`Producto "${product.name}" agregado al carrito`);
+                        handleAddToCart(product);
                       }}
                     >
-                      Agregar
+                      🛒 Agregar
                     </button>
                   </div>
 
@@ -438,6 +593,72 @@ const Products = () => {
                     <MessageCircle size={16} />
                     Ver comentarios
                   </button>
+
+                  {/* Botones de administrador */}
+                  {user && user.is_admin && (
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      marginTop: '10px' 
+                    }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUpdatePrice(product.id);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          background: '#ffc107',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: '#000',
+                          fontWeight: '600',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#ffb300';
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#ffc107';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        💲 Precio
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(product.id);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          background: '#dc3545',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: 'white',
+                          fontWeight: '600',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#bb2d3b';
+                          e.currentTarget.style.transform = 'scale(1.02)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#dc3545';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        🗑️ Eliminar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

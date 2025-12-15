@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
+import { CartProvider } from './CartContext';
 
 // Importar componentes
 import Login from './login';
@@ -13,6 +14,7 @@ import Menu from './menu';
 import Inicio from './inicio';
 import Products from './products';
 import ApiExterna from './api_externa';
+import Cart from './cart';
 
 // Componente wrapper para incluir el menú en rutas protegidas
 const LayoutWithMenu = ({ children }) => {
@@ -30,11 +32,12 @@ const LayoutWithMenu = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Rutas públicas - SIN MENÚ */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/registrar" element={<Registrar />} />
+      <CartProvider>
+        <Router>
+          <Routes>
+            {/* Rutas públicas - SIN MENÚ */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/registrar" element={<Registrar />} />
 
           {/* Rutas protegidas - CON MENÚ */}
           <Route element={<ProtectedRoute />}>
@@ -62,6 +65,14 @@ function App() {
                 </LayoutWithMenu>
               }
             />
+            <Route
+              path="/cart"
+              element={
+                <LayoutWithMenu>
+                  <Cart />
+                </LayoutWithMenu>
+              }
+            />
           </Route>
 
           {/* Ruta raíz: redirige a inicio si está autenticado, sino a login */}
@@ -70,7 +81,8 @@ function App() {
           {/* Ruta 404 (catch-all): redirige a la raíz */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
+        </Router>
+      </CartProvider>
     </AuthProvider>
   );
 }

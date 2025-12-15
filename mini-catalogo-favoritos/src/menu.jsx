@@ -1,17 +1,20 @@
 // src/menu.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { useCart } from './CartContext';
 
 const Menu = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const { getCartCount } = useCart();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Estilos del menú lateral
   const sidebarStyle = {
     position: 'fixed',
-    left: 0,
+    left: isCollapsed ? '-250px' : '0',
     top: 0,
     width: '250px',
     height: '100vh',
@@ -20,7 +23,27 @@ const Menu = () => {
     boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
     display: 'flex',
     flexDirection: 'column',
-    zIndex: 1000
+    zIndex: 1000,
+    transition: 'left 0.3s ease'
+  };
+
+  const toggleButtonStyle = {
+    position: 'fixed',
+    left: isCollapsed ? '10px' : '260px',
+    top: '20px',
+    width: '40px',
+    height: '40px',
+    background: '#646cff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    zIndex: 1001,
+    transition: 'left 0.3s ease',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
   };
 
   const menuItemStyle = (isActive) => ({
@@ -59,13 +82,29 @@ const Menu = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div style={sidebarStyle}>
-      <div style={{ marginBottom: '30px', textAlign: 'center' }}>
-        <h2 style={{ color: 'white', margin: 0, fontSize: '24px' }}>Mi Aplicación</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '5px 0 0 0' }}>
-          Sistema de Gestión
-        </p>
-      </div>
+    <>
+      <button 
+        style={toggleButtonStyle}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#535bf2';
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = '#646cff';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+      >
+        {isCollapsed ? '☰' : '✕'}
+      </button>
+
+      <div style={sidebarStyle}>
+        <div style={{ marginBottom: '30px', textAlign: 'center' }}>
+          <h2 style={{ color: 'white', margin: 0, fontSize: '24px' }}>Mi Aplicación</h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', margin: '5px 0 0 0' }}>
+            Sistema de Gestión
+          </p>
+        </div>
 
       <nav style={{ flex: 1 }}>
         <div 
@@ -118,6 +157,39 @@ const Menu = () => {
         >
           🌐 API Externa
         </div>
+
+        <div 
+          style={{
+            ...menuItemStyle(isActive('/cart')),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+          onClick={() => navigate('/cart')}
+          onMouseEnter={(e) => {
+            if (!isActive('/cart')) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive('/cart')) {
+              e.currentTarget.style.background = 'transparent';
+            }
+          }}
+        >
+          <span>🛒 Carrito</span>
+          {getCartCount() > 0 && (
+            <span style={{
+              background: '#dc3545',
+              borderRadius: '50%',
+              padding: '2px 8px',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}>
+              {getCartCount()}
+            </span>
+          )}
+        </div>
       </nav>
 
       <button 
@@ -134,7 +206,8 @@ const Menu = () => {
       >
         🚪 Cerrar Sesión
       </button>
-    </div>
+      </div>
+    </>
   );
 };
 
